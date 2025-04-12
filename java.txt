@@ -1,0 +1,47 @@
+const API_URL = "https://api-inference.huggingface.co/models/gpt2-large"; // or any other model
+const HF_TOKEN = "YOUR_HUGGINGFACE_API_KEY"; // <--- replace with your Hugging Face token
+
+let chatHistory = "";
+
+async function sendMessage() {
+  const input = document.getElementById("userInput");
+  const message = input.value.trim();
+  if (!message) return;
+
+  appendMessage("You", message);
+  input.value = "";
+  chatHistory += `User: ${message}\nSouthgateAI:`;
+
+  const response = await fetch(API_URL, {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${HF_TOKEN}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      inputs: chatHistory,
+      parameters: {
+        temperature: 0.7,
+        max_new_tokens: 100,
+        return_full_text: false
+      }
+    })
+  });
+
+  const data = await response.json();
+  let reply = data?.[0]?.generated_text || "SouthgateAI is unsure how to respond.";
+  reply = reply.replace(/^SouthgateAI:/i, "").trim();
+
+  appendMessage("SouthgateAI", reply);
+  chatHistory += ` ${reply}\n`;
+}
+
+function appendMessage(sender, message) {
+  const chatbox = document.getElementById("chatbox");
+  const div = document.createElement("div");
+  div.classList.add("message");
+  div.classList.add(sender === "You" ? "user" : "bot");
+  div.textContent = `${sender}: ${message}`;
+  chatbox.appendChild(div);
+  chatbox.scrollTop = chatbox.scrollHeight;
+}
